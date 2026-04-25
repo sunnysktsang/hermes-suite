@@ -1,0 +1,10 @@
+*.pyc
+__pycache__
+.git
+.gitignore
+*.md
+.env.example
+build.sh
+up.sh
+down.sh
+logs.sh

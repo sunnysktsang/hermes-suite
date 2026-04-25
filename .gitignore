@@ -1,0 +1,32 @@
+# =============================================================================
+# .gitignore — Hermes Suit
+# =============================================================================
+
+# Environment / secrets (API keys, tokens)
+.env
+.env.*
+!.env.example
+
+# Hermes data (mounted from host, never in repo)
+data/
+hermes/
+
+# Build artifacts
+*.tar
+*.tar.gz
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Python cache (shouldn't be here but just in case)
+__pycache__/
+*.pyc
