@@ -1,5 +1,5 @@
 # =============================================================================
-# Hermes Suit — All-in-One Container Image
+# Hermes Suite — All-in-One Container Image
 # Combines: hermes-agent + hermes-webui + hermes-dashboard
 #
 # Solves Podman v3.4.4 UID/GID sharing limitation between multiple containers
@@ -10,7 +10,7 @@
 #   hermes-dashboard — Built-in monitoring dashboard on port 9119
 #   hermes-webui     — Browser chat interface on port 8787
 #
-# Build:  podman build -t hermes-suite:2026.4.23-0.50.156 .
+# Build:  podman build -t hermes-suite:2026.4.30-0.50.255 .
 # Run:    podman-compose up -d
 # =============================================================================
 
@@ -19,7 +19,7 @@
 # This already contains: Python 3.13, Node.js, npm, Playwright, agent code,
 # the built-in web dashboard (hermes dashboard), the gateway, uv, and gosu.
 # ---------------------------------------------------------------------------
-ARG AGENT_VERSION=v2026.4.23
+ARG AGENT_VERSION=v2026.4.30
 FROM docker.io/nousresearch/hermes-agent:${AGENT_VERSION}
 
 USER root
@@ -78,7 +78,7 @@ RUN mkdir -p /var/log/supervisor /var/run/supervisor && \
 #
 # PIN to a specific tag for reproducible builds — never use 'master'.
 # ---------------------------------------------------------------------------
-ARG HERMES_WEBUI_VERSION=v0.50.156
+ARG HERMES_WEBUI_VERSION=v0.50.255
 RUN cd /opt && \
     git clone --depth 1 --branch ${HERMES_WEBUI_VERSION} \
         https://github.com/nesquena/hermes-webui.git hermes-webui && \
@@ -94,19 +94,19 @@ RUN echo "__version__ = '${HERMES_WEBUI_VERSION}'" > /opt/hermes-webui/api/_vers
 # Stage 7: Set up supervisord config and startup script
 # ---------------------------------------------------------------------------
 COPY supervisord.conf /etc/supervisor/supervisord.conf
-COPY start.sh /opt/hermes-suit/start.sh
-RUN chmod +x /opt/hermes-suit/start.sh
+COPY start.sh /opt/hermes-suite/start.sh
+RUN chmod +x /opt/hermes-suite/start.sh
 
 # ---------------------------------------------------------------------------
 # Stage 8: Environment, labels, and runtime config
 # ---------------------------------------------------------------------------
 # Re-declare ARGs after FROM so they are available in LABEL
-ARG AGENT_VERSION=v2026.4.23
-ARG HERMES_WEBUI_VERSION=v0.50.156
+ARG AGENT_VERSION=v2026.4.30
+ARG HERMES_WEBUI_VERSION=v0.50.255
 
-LABEL org.opencontainers.image.title="Hermes Suit" \
+LABEL org.opencontainers.image.title="Hermes Suite" \
       org.opencontainers.image.description="All-in-one: hermes-agent + hermes-webui + hermes-dashboard" \
-      org.opencontainers.image.source="https://github.com/sunnysktsang/hermes-suit" \
+      org.opencontainers.image.source="https://github.com/sunnysktsang/hermes-suite" \
       org.opencontainers.image.vendor="sunnysktsang" \
       hermes-suite.agent-version="${AGENT_VERSION}" \
       hermes-suite.webui-version="${HERMES_WEBUI_VERSION}"
@@ -135,5 +135,5 @@ RUN mkdir -p /workspace
 WORKDIR /opt/hermes
 
 # Entrypoint: run start.sh which sets up config then launches supervisord
-ENTRYPOINT ["/opt/hermes-suit/start.sh"]
+ENTRYPOINT ["/opt/hermes-suite/start.sh"]
 CMD ["supervisord", "-c", "/etc/supervisor/supervisord.conf", "-n"]

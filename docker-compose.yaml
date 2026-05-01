@@ -1,5 +1,5 @@
 # =============================================================================
-# Hermes Suit — docker-compose.yaml
+# Hermes Suite — docker-compose.yaml
 #
 # Single-container setup: all services in one image.
 # No UID/GID sharing issues — everything runs as the same user.
@@ -13,12 +13,12 @@
 # =============================================================================
 
 services:
-  hermes-suit:
+  hermes-suite:
     build:
       context: .
       dockerfile: Dockerfile
-    image: ascensionoid/hermes-suite:2026.4.23-0.50.156
-    container_name: hermes-suit
+    image: ascensionoid/hermes-suite:2026.4.30-0.50.255
+    container_name: hermes-suite
     networks:
       agent_net:
         ipv4_address: 10.99.0.11

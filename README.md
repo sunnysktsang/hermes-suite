@@ -1,4 +1,4 @@
-# Hermes Suit — All-in-One Container Image
+# Hermes Suite — All-in-One Container Image
 
 Single Docker/Podman image combining three Hermes services:
 
@@ -7,6 +7,10 @@ Single Docker/Podman image combining three Hermes services:
 | hermes-gateway | 8642 | Agent gateway (CLI, Telegram, cron, tools) |
 | hermes-dashboard | 9119 | Monitoring/analytics dashboard (built-in) |
 | hermes-webui | 8787 | Browser-based chat interface |
+
+Pre-built multi-arch images available on [Docker Hub](https://hub.docker.com/r/ascensionoid/hermes-suite).
+
+🏗️ Official docker images are maintained by Ascensionoid ([ascensionoid.com](https://ascensionoid.com)).
 
 ## Why This Exists
 
@@ -20,13 +24,13 @@ This image solves that by running all three services in **one container** via su
 ## Architecture
 
 ```
-+--------------------------------------------------+
-|              hermes-suit container                 |
-|                                                   |
-|  +-- supervisord (PID 1) ----------------------+  |
++-------------------------------------------------+
+|             hermes-suite container              |
+|                                                 |
+|  +-- supervisord (PID 1) --------------------+  |
 |  |                                           |  |
 |  |  [hermes-gateway]   port 8642             |  |
-|  |    hermes gateway run                      |  |
+|  |    hermes gateway run                     |  |
 |  |                                           |  |
 |  |  [hermes-dashboard] port 9119             |  |
 |  |    hermes dashboard --host 0.0.0.0        |  |
@@ -35,9 +39,9 @@ This image solves that by running all three services in **one container** via su
 |  |    python server.py                       |  |
 |  |                                           |  |
 |  +-------------------------------------------+  |
-|                                                   |
-|  /opt/data  <-- mounted from ~/.hermes           |
-+--------------------------------------------------+
+|                                                 |
+|  /opt/data  <-- mounted from ~/.hermes          |
++-------------------------------------------------+
 ```
 
 ## Prerequisites
@@ -55,10 +59,11 @@ to use **pinned versions** rather than building from `latest` or `master`.
 
 ### Using Pre-Built Images (Recommended)
 
-If you prefer not to build manually, use our pre-verified image tags:
+If you prefer not to build manually, use our pre-verified image tags from
+[Docker Hub](https://hub.docker.com/r/ascensionoid/hermes-suite):
 
 ```bash
-podman pull ascensionoid/hermes-suite:2026.4.23-0.50.156
+podman pull ascensionoid/hermes-suite:2026.4.30-0.50.255
 ```
 
 ### Manual Build with Specific Versions
@@ -67,9 +72,9 @@ If you need a specific combination, pass the versions as build arguments:
 
 ```bash
 podman build \
-  --build-arg AGENT_VERSION=v2026.4.23 \
-  --build-arg HERMES_WEBUI_VERSION=v0.50.156 \
-  -t hermes-suite:2026.4.23-0.50.156 .
+  --build-arg AGENT_VERSION=v2026.4.30 \
+  --build-arg HERMES_WEBUI_VERSION=v0.50.255 \
+  -t hermes-suite:2026.4.30-0.50.255 .
 ```
 
 Or use the build helper (reads from `versions.env`):
@@ -77,7 +82,7 @@ Or use the build helper (reads from `versions.env`):
 ```bash
 ./build.sh
 # Override defaults:
-# ./build.sh --agent v2026.4.23 --webui v0.50.156
+# ./build.sh --agent v2026.4.30 --webui v0.50.255
 ```
 
 ### Version Compatibility Table
@@ -86,13 +91,14 @@ Every release is an explicitly tested pair of Agent + WebUI on both amd64 and ar
 
 | Suite Tag | Agent Version | WebUI Version | Tested |
 |-----------|--------------|---------------|--------|
+| `2026.4.30-0.50.255` | v2026.4.30 | v0.50.255 | amd64 + arm64 |
 | `2026.4.23-0.50.156` | v2026.4.23 | v0.50.156 | amd64 + arm64 |
 
 ### Version Tag Format
 
 Suite tags follow the pattern `{agent_date}-{webui_semver}`:
-- **Agent**: date-based version from `nousresearch/hermes-agent` (e.g. `v2026.4.23`)
-- **WebUI**: semantic version from `nesquena/hermes-webui` (e.g. `v0.50.156`)
+- **Agent**: date-based version from `nousresearch/hermes-agent` (e.g. `v2026.4.30`)
+- **WebUI**: semantic version from `nesquena/hermes-webui` (e.g. `v0.50.255`)
 
 The pinned pair for each release is declared in `versions.env`.
 
@@ -101,8 +107,8 @@ The pinned pair for each release is declared in `versions.env`.
 ### 1. Clone this repo
 
 ```bash
-git clone https://github.com/sunnysktsang/hermes-suit.git
-cd hermes-suit
+git clone https://github.com/sunnysktsang/hermes-suite.git
+cd hermes-suite
 ```
 
 ### 2. Build the image
@@ -116,9 +122,9 @@ Or manually with pinned versions:
 
 ```bash
 podman build \
-  --build-arg AGENT_VERSION=v2026.4.23 \
-  --build-arg HERMES_WEBUI_VERSION=v0.50.156 \
-  -t ascensionoid/hermes-suite:2026.4.23-0.50.156 .
+  --build-arg AGENT_VERSION=v2026.4.30 \
+  --build-arg HERMES_WEBUI_VERSION=v0.50.255 \
+  -t ascensionoid/hermes-suite:2026.4.30-0.50.255 .
 ```
 
 ### 3. Create the network (if not already existing)
@@ -183,7 +189,7 @@ All service logs stream to stdout/stderr (visible via `podman logs`). Supervisor
 also writes to `/var/log/supervisor/` inside the container:
 
 ```bash
-podman exec hermes-suit supervisorctl status
+podman exec hermes-suite supervisorctl status
 ```
 
 ## Customization
@@ -193,8 +199,8 @@ podman exec hermes-suit supervisorctl status
 Edit `versions.env` to change the pinned versions:
 
 ```
-AGENT_VERSION=v2026.4.23
-WEBUI_VERSION=v0.50.156
+AGENT_VERSION=v2026.4.30
+WEBUI_VERSION=v0.50.255
 ```
 
 Then rebuild:
@@ -224,9 +230,9 @@ If you are currently running the multi-container setup (hermes-agent + hermes-we
 
 1. Stop the existing containers.
 
-2. Build and start hermes-suit:
+2. Build and start hermes-suite:
    ```bash
-   cd hermes-suit
+   cd hermes-suite
    ./build.sh
    ./up.sh
    ```
@@ -248,7 +254,7 @@ sudo chown -R $(id -u):$(id -g) ~/.hermes
 Check that the webui venv was built correctly:
 
 ```bash
-podman exec hermes-suit /opt/hermes-webui/venv/bin/python -c "import yaml; print('OK')"
+podman exec hermes-suite /opt/hermes-webui/venv/bin/python -c "import yaml; print('OK')"
 ```
 
 ### Services fail with "EACCES making dispatchers"
@@ -261,7 +267,7 @@ Do NOT add `tty: true` to docker-compose.yaml — the container runs correctly w
 The dashboard needs the gateway running first. Check supervisord status:
 
 ```bash
-podman exec hermes-suit supervisorctl status
+podman exec hermes-suite supervisorctl status
 ```
 
 ### Build fails on git clone
@@ -303,7 +309,7 @@ The Dockerfile performs these steps:
 ## Files
 
 ```
-hermes-suit/
+hermes-suite/
   Dockerfile           — Build definition (parameterized AGENT_VERSION + HERMES_WEBUI_VERSION)
   versions.env         — Pinned component versions for current release
   supervisord.conf     — Process manager config (3 services)
@@ -320,10 +326,10 @@ hermes-suit/
 
 ## Tested On
 
-| Platform | Arch | OS | Runtime | Image Size | Status |
-|----------|------|----|---------|-----------|--------|
-| x86_64 (WSL2) | amd64 | Ubuntu 22.04 | Podman 3.4.4 | 9.66 GB | All 3 services running |
-| Jetson Orin NX 16GB | arm64 | Ubuntu 22.04 | Podman 3.4.4 | 9.72 GB | All 3 services running |
+| Platform | Arch | OS | Runtime | Status |
+|----------|------|----|---------|--------|
+| x86_64 (WSL2) | amd64 | Ubuntu 22.04 | Podman 3.4.4 | All 3 services running |
+| Jetson Orin NX 16GB | arm64 | Ubuntu 22.04 | Podman 3.4.4 | All 3 services running |
 
 The base image `nousresearch/hermes-agent` provides multi-architecture manifests (amd64 + arm64).
 Podman and Docker automatically pull the correct variant for your platform.
@@ -334,3 +340,7 @@ No changes to the Dockerfile are needed — it builds identically on both archit
 This project is provided as-is. The individual components are licensed separately:
 - [hermes-agent](https://github.com/NousResearch/hermes-agent) — by Nous Research
 - [hermes-webui](https://github.com/nesquena/hermes-webui) — by nesquena (MIT)
+
+---
+
+> If this project helps you, consider giving it a ⭐ on [GitHub](https://github.com/sunnysktsang/hermes-suite) — it helps others find it and keeps the project maintained.

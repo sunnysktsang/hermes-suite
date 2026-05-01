@@ -1,9 +1,9 @@
 #!/bin/bash
 # =============================================================================
-# build.sh — Build the Hermes Suit container image
+# build.sh — Build the Hermes Suite container image
 #
 # Reads pinned versions from versions.env by default.
-# Override with: ./build.sh --agent v2026.4.23 --webui v0.50.156
+# Override with: ./build.sh --agent v2026.4.30 --webui v0.50.255
 # =============================================================================
 set -e
 
@@ -35,7 +35,7 @@ WEBUI_VER_CLEAN="${WEBUI_VERSION#v}"
 IMAGE_TAG="ascensionoid/hermes-suite:${AGENT_VER_CLEAN}-${WEBUI_VER_CLEAN}"
 
 echo "=========================================="
-echo " Building Hermes Suit"
+echo " Building Hermes Suite"
 echo "=========================================="
 echo " Agent version:  ${AGENT_VERSION}"
 echo " WebUI version:  ${WEBUI_VERSION}"
