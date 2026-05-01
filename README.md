@@ -48,12 +48,60 @@ This image solves that by running all three services in **one container** via su
 - Network access during build (for git clone and pip install)
 - Works on both amd64 (x86_64) and arm64 (ARMv8) — tested on Jetson Orin NX
 
+## Version Management
+
+To ensure stability on edge devices (Jetson, ARM boards), it is highly recommended
+to use **pinned versions** rather than building from `latest` or `master`.
+
+### Using Pre-Built Images (Recommended)
+
+If you prefer not to build manually, use our pre-verified image tags:
+
+```bash
+podman pull ascensionoid/hermes-suite:2026.4.23-0.50.156
+```
+
+### Manual Build with Specific Versions
+
+If you need a specific combination, pass the versions as build arguments:
+
+```bash
+podman build \
+  --build-arg AGENT_VERSION=v2026.4.23 \
+  --build-arg HERMES_WEBUI_VERSION=v0.50.156 \
+  -t hermes-suite:2026.4.23-0.50.156 .
+```
+
+Or use the build helper (reads from `versions.env`):
+
+```bash
+./build.sh
+# Override defaults:
+# ./build.sh --agent v2026.4.23 --webui v0.50.156
+```
+
+### Version Compatibility Table
+
+Every release is an explicitly tested pair of Agent + WebUI on both amd64 and arm64.
+
+| Suite Tag | Agent Version | WebUI Version | Tested |
+|-----------|--------------|---------------|--------|
+| `2026.4.23-0.50.156` | v2026.4.23 | v0.50.156 | amd64 + arm64 |
+
+### Version Tag Format
+
+Suite tags follow the pattern `{agent_date}-{webui_semver}`:
+- **Agent**: date-based version from `nousresearch/hermes-agent` (e.g. `v2026.4.23`)
+- **WebUI**: semantic version from `nesquena/hermes-webui` (e.g. `v0.50.156`)
+
+The pinned pair for each release is declared in `versions.env`.
+
 ## Quick Start
 
 ### 1. Clone this repo
 
 ```bash
-git clone https://github.com/<your-user>/hermes-suit.git
+git clone https://github.com/sunnysktsang/hermes-suit.git
 cd hermes-suit
 ```
 
@@ -64,9 +112,13 @@ chmod +x *.sh
 ./build.sh
 ```
 
-Or manually:
+Or manually with pinned versions:
+
 ```bash
-podman build -t hermes-suit:v1 .
+podman build \
+  --build-arg AGENT_VERSION=v2026.4.23 \
+  --build-arg HERMES_WEBUI_VERSION=v0.50.156 \
+  -t ascensionoid/hermes-suite:2026.4.23-0.50.156 .
 ```
 
 ### 3. Create the network (if not already existing)
@@ -82,6 +134,7 @@ podman network create --subnet 10.99.0.0/24 agent_net
 ```
 
 Or manually:
+
 ```bash
 podman-compose up -d
 ```
@@ -135,26 +188,25 @@ podman exec hermes-suit supervisorctl status
 
 ## Customization
 
-### Changing the Hermes Agent version
+### Changing component versions
 
-Edit the `FROM` line in the `Dockerfile`:
+Edit `versions.env` to change the pinned versions:
 
-```dockerfile
-FROM docker.io/nousresearch/hermes-agent:v2026.4.23
+```
+AGENT_VERSION=v2026.4.23
+WEBUI_VERSION=v0.50.156
 ```
 
-### Changing the WebUI version
-
-Edit the build arg in the `Dockerfile`:
-
-```dockerfile
-ARG HERMES_WEBUI_VERSION=master
-```
-
-Or pass it at build time:
+Then rebuild:
 
 ```bash
-podman build --build-arg HERMES_WEBUI_VERSION=v0.50.200 -t hermes-suit:v1 .
+./build.sh
+```
+
+Or override at build time:
+
+```bash
+./build.sh --agent v2026.4.16 --webui v0.50.244
 ```
 
 ### Changing the workspace path
@@ -186,6 +238,7 @@ If you are currently running the multi-container setup (hermes-agent + hermes-we
 ### Permission errors on ~/.hermes
 
 Ensure the directory is owned by your user:
+
 ```bash
 sudo chown -R $(id -u):$(id -g) ~/.hermes
 ```
@@ -193,6 +246,7 @@ sudo chown -R $(id -u):$(id -g) ~/.hermes
 ### WebUI not loading
 
 Check that the webui venv was built correctly:
+
 ```bash
 podman exec hermes-suit /opt/hermes-webui/venv/bin/python -c "import yaml; print('OK')"
 ```
@@ -205,6 +259,7 @@ Do NOT add `tty: true` to docker-compose.yaml — the container runs correctly w
 ### Dashboard returns connection error
 
 The dashboard needs the gateway running first. Check supervisord status:
+
 ```bash
 podman exec hermes-suit supervisorctl status
 ```
@@ -249,11 +304,12 @@ The Dockerfile performs these steps:
 
 ```
 hermes-suit/
-  Dockerfile           — Build definition (agent base + webui + supervisor)
+  Dockerfile           — Build definition (parameterized AGENT_VERSION + HERMES_WEBUI_VERSION)
+  versions.env         — Pinned component versions for current release
   supervisord.conf     — Process manager config (3 services)
   start.sh             — Container entrypoint (UID setup + launch)
   docker-compose.yaml  — Podman/Docker Compose configuration
-  build.sh             — Build helper script
+  build.sh             — Build helper script (reads versions.env)
   up.sh                — Start helper script
   down.sh              — Stop helper script
   logs.sh              — Log viewer helper script

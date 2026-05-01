@@ -10,7 +10,7 @@
 #   hermes-dashboard — Built-in monitoring dashboard on port 9119
 #   hermes-webui     — Browser chat interface on port 8787
 #
-# Build:  podman build -t hermes-suit:v1 .
+# Build:  podman build -t hermes-suite:2026.4.23-0.50.156 .
 # Run:    podman-compose up -d
 # =============================================================================
 
@@ -19,7 +19,8 @@
 # This already contains: Python 3.13, Node.js, npm, Playwright, agent code,
 # the built-in web dashboard (hermes dashboard), the gateway, uv, and gosu.
 # ---------------------------------------------------------------------------
-FROM docker.io/nousresearch/hermes-agent:v2026.4.23
+ARG AGENT_VERSION=v2026.4.23
+FROM docker.io/nousresearch/hermes-agent:${AGENT_VERSION}
 
 USER root
 
@@ -74,8 +75,10 @@ RUN mkdir -p /var/log/supervisor /var/run/supervisor && \
 # The webui is a Python web server (server.py). We clone it from GitHub
 # and set up its own venv using uv (avoids python3-venv package requirement).
 # The webui needs the agent's Python deps to import agent modules.
+#
+# PIN to a specific tag for reproducible builds — never use 'master'.
 # ---------------------------------------------------------------------------
-ARG HERMES_WEBUI_VERSION=master
+ARG HERMES_WEBUI_VERSION=v0.50.156
 RUN cd /opt && \
     git clone --depth 1 --branch ${HERMES_WEBUI_VERSION} \
         https://github.com/nesquena/hermes-webui.git hermes-webui && \
@@ -95,8 +98,19 @@ COPY start.sh /opt/hermes-suit/start.sh
 RUN chmod +x /opt/hermes-suit/start.sh
 
 # ---------------------------------------------------------------------------
-# Stage 8: Environment and runtime config
+# Stage 8: Environment, labels, and runtime config
 # ---------------------------------------------------------------------------
+# Re-declare ARGs after FROM so they are available in LABEL
+ARG AGENT_VERSION=v2026.4.23
+ARG HERMES_WEBUI_VERSION=v0.50.156
+
+LABEL org.opencontainers.image.title="Hermes Suit" \
+      org.opencontainers.image.description="All-in-one: hermes-agent + hermes-webui + hermes-dashboard" \
+      org.opencontainers.image.source="https://github.com/sunnysktsang/hermes-suit" \
+      org.opencontainers.image.vendor="sunnysktsang" \
+      hermes-suite.agent-version="${AGENT_VERSION}" \
+      hermes-suite.webui-version="${HERMES_WEBUI_VERSION}"
+
 ENV PATH="/opt/hermes/.venv/bin:/opt/hermes-webui/venv/bin:$PATH"
 ENV HERMES_HOME=/opt/data
 ENV HERMES_DATA_DIR=/opt/data

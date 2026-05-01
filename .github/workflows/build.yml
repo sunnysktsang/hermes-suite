@@ -1,0 +1,68 @@
+name: Build and Push Multi-Arch Image
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  REGISTRY: docker.io
+  IMAGE_NAME: ascensionoid/hermes-suite
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Parse version from tag
+        id: versions
+        run: |
+          # Tag format: v2026.4.23-0.50.156
+          TAG="${GITHUB_REF_NAME}"
+          # Strip leading 'v' for Docker tag
+          DOCKER_TAG="${TAG#v}"
+          echo "docker_tag=${DOCKER_TAG}" >> "$GITHUB_OUTPUT"
+
+          # Extract agent and webui versions from the compound tag
+          # 2026.4.23-0.50.156 -> agent=2026.4.23, webui=0.50.156
+          AGENT_VER="${DOCKER_TAG%-*}"
+          WEBUI_VER="${DOCKER_TAG##*-}"
+          echo "agent_version=v${AGENT_VER}" >> "$GITHUB_OUTPUT"
+          echo "webui_version=v${WEBUI_VER}" >> "$GITHUB_OUTPUT"
+
+          echo "Suite tag:     ${DOCKER_TAG}"
+          echo "Agent version: v${AGENT_VER}"
+          echo "WebUI version: v${WEBUI_VER}"
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          build-args: |
+            AGENT_VERSION=${{ steps.versions.outputs.agent_version }}
+            HERMES_WEBUI_VERSION=${{ steps.versions.outputs.webui_version }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.versions.outputs.docker_tag }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

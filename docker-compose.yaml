@@ -17,7 +17,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: hermes-suit:v1
+    image: ascensionoid/hermes-suite:2026.4.23-0.50.156
     container_name: hermes-suit
     networks:
       agent_net:
