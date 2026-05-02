@@ -23,14 +23,14 @@ jobs:
       - name: Parse version from tag
         id: versions
         run: |
-          # Tag format: v2026.4.30-0.50.255
+          # Tag format: v2026.4.30-0.50.266
           TAG="${GITHUB_REF_NAME}"
           # Strip leading 'v' for Docker tag
           DOCKER_TAG="${TAG#v}"
           echo "docker_tag=${DOCKER_TAG}" >> "$GITHUB_OUTPUT"
 
           # Extract agent and webui versions from the compound tag
-          # 2026.4.30-0.50.255 -> agent=2026.4.30, webui=0.50.255
+          # 2026.4.30-0.50.266 -> agent=2026.4.30, webui=0.50.266
           AGENT_VER="${DOCKER_TAG%-*}"
           WEBUI_VER="${DOCKER_TAG##*-}"
           echo "agent_version=v${AGENT_VER}" >> "$GITHUB_OUTPUT"
