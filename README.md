@@ -63,7 +63,7 @@ If you prefer not to build manually, use our pre-verified image tags from
 [Docker Hub](https://hub.docker.com/r/ascensionoid/hermes-suite):
 
 ```bash
-podman pull ascensionoid/hermes-suite:2026.4.30-0.50.255
+podman pull ascensionoid/hermes-suite:2026.4.30-0.50.260
 ```
 
 ### Manual Build with Specific Versions
@@ -73,8 +73,8 @@ If you need a specific combination, pass the versions as build arguments:
 ```bash
 podman build \
   --build-arg AGENT_VERSION=v2026.4.30 \
-  --build-arg HERMES_WEBUI_VERSION=v0.50.255 \
-  -t hermes-suite:2026.4.30-0.50.255 .
+  --build-arg HERMES_WEBUI_VERSION=v0.50.260 \
+  -t hermes-suite:2026.4.30-0.50.260 .
 ```
 
 Or use the build helper (reads from `versions.env`):
@@ -82,7 +82,7 @@ Or use the build helper (reads from `versions.env`):
 ```bash
 ./build.sh
 # Override defaults:
-# ./build.sh --agent v2026.4.30 --webui v0.50.255
+# ./build.sh --agent v2026.4.30 --webui v0.50.260
 ```
 
 ### Version Compatibility Table
@@ -91,14 +91,14 @@ Every release is an explicitly tested pair of Agent + WebUI on both amd64 and ar
 
 | Suite Tag | Agent Version | WebUI Version | Tested |
 |-----------|--------------|---------------|--------|
-| `2026.4.30-0.50.255` | v2026.4.30 | v0.50.255 | amd64 + arm64 |
+| `2026.4.30-0.50.260` | v2026.4.30 | v0.50.260 | amd64 + arm64 |
 | `2026.4.23-0.50.156` | v2026.4.23 | v0.50.156 | amd64 + arm64 |
 
 ### Version Tag Format
 
 Suite tags follow the pattern `{agent_date}-{webui_semver}`:
 - **Agent**: date-based version from `nousresearch/hermes-agent` (e.g. `v2026.4.30`)
-- **WebUI**: semantic version from `nesquena/hermes-webui` (e.g. `v0.50.255`)
+- **WebUI**: semantic version from `nesquena/hermes-webui` (e.g. `v0.50.260`)
 
 The pinned pair for each release is declared in `versions.env`.
 
@@ -123,8 +123,8 @@ Or manually with pinned versions:
 ```bash
 podman build \
   --build-arg AGENT_VERSION=v2026.4.30 \
-  --build-arg HERMES_WEBUI_VERSION=v0.50.255 \
-  -t ascensionoid/hermes-suite:2026.4.30-0.50.255 .
+  --build-arg HERMES_WEBUI_VERSION=v0.50.260 \
+  -t ascensionoid/hermes-suite:2026.4.30-0.50.260 .
 ```
 
 ### 3. Create the network (if not already existing)
@@ -200,7 +200,7 @@ Edit `versions.env` to change the pinned versions:
 
 ```
 AGENT_VERSION=v2026.4.30
-WEBUI_VERSION=v0.50.255
+WEBUI_VERSION=v0.50.260
 ```
 
 Then rebuild:
@@ -337,9 +337,11 @@ No changes to the Dockerfile are needed — it builds identically on both archit
 
 ## License
 
-This project is provided as-is. The individual components are licensed separately:
+This project is licensed under the MIT License. The individual components are licensed separately:
 - [hermes-agent](https://github.com/NousResearch/hermes-agent) — by Nous Research
 - [hermes-webui](https://github.com/nesquena/hermes-webui) — by nesquena (MIT)
+
+Thanks to [nesquena](https://github.com/nesquena) for building hermes-webui and [referencing this project](https://github.com/nesquena/hermes-webui/blob/master/docs/docker.md) in the official Docker docs.
 
 ---
 
