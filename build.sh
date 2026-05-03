@@ -3,7 +3,7 @@
 # build.sh — Build the Hermes Suite container image
 #
 # Reads pinned versions from versions.env by default.
-# Override with: ./build.sh --agent v2026.4.30 --webui v0.50.266
+# Override with: ./build.sh --agent v2026.4.30 --webui v0.50.278
 # =============================================================================
 set -e
 

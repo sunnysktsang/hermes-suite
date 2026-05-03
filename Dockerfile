@@ -10,7 +10,7 @@
 #   hermes-dashboard — Built-in monitoring dashboard on port 9119
 #   hermes-webui     — Browser chat interface on port 8787
 #
-# Build:  podman build -t hermes-suite:2026.4.30-0.50.266 .
+# Build:  podman build -t hermes-suite:2026.4.30-0.50.278 .
 # Run:    podman-compose up -d
 # =============================================================================
 
@@ -78,7 +78,7 @@ RUN mkdir -p /var/log/supervisor /var/run/supervisor && \
 #
 # PIN to a specific tag for reproducible builds — never use 'master'.
 # ---------------------------------------------------------------------------
-ARG HERMES_WEBUI_VERSION=v0.50.266
+ARG HERMES_WEBUI_VERSION=v0.50.278
 RUN cd /opt && \
     git clone --depth 1 --branch ${HERMES_WEBUI_VERSION} \
         https://github.com/nesquena/hermes-webui.git hermes-webui && \
@@ -102,7 +102,7 @@ RUN chmod +x /opt/hermes-suite/start.sh
 # ---------------------------------------------------------------------------
 # Re-declare ARGs after FROM so they are available in LABEL
 ARG AGENT_VERSION=v2026.4.30
-ARG HERMES_WEBUI_VERSION=v0.50.266
+ARG HERMES_WEBUI_VERSION=v0.50.278
 
 LABEL org.opencontainers.image.title="Hermes Suite" \
       org.opencontainers.image.description="All-in-one: hermes-agent + hermes-webui + hermes-dashboard" \

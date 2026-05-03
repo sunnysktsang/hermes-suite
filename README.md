@@ -63,7 +63,7 @@ If you prefer not to build manually, use our pre-verified image tags from
 [Docker Hub](https://hub.docker.com/r/ascensionoid/hermes-suite):
 
 ```bash
-podman pull ascensionoid/hermes-suite:2026.4.30-0.50.266
+podman pull ascensionoid/hermes-suite:2026.4.30-0.50.278
 ```
 
 ### Manual Build with Specific Versions
@@ -73,8 +73,8 @@ If you need a specific combination, pass the versions as build arguments:
 ```bash
 podman build \
   --build-arg AGENT_VERSION=v2026.4.30 \
-  --build-arg HERMES_WEBUI_VERSION=v0.50.266 \
-  -t hermes-suite:2026.4.30-0.50.266 .
+  --build-arg HERMES_WEBUI_VERSION=v0.50.278 \
+  -t hermes-suite:2026.4.30-0.50.278 .
 ```
 
 Or use the build helper (reads from `versions.env`):
@@ -82,7 +82,7 @@ Or use the build helper (reads from `versions.env`):
 ```bash
 ./build.sh
 # Override defaults:
-# ./build.sh --agent v2026.4.30 --webui v0.50.266
+# ./build.sh --agent v2026.4.30 --webui v0.50.278
 ```
 
 ### Version Compatibility Table
@@ -90,15 +90,15 @@ Or use the build helper (reads from `versions.env`):
 Every release is an explicitly tested pair of Agent + WebUI on both amd64 and arm64.
 
 | Suite Tag | Agent Version | WebUI Version | Tested |
-|-----------|--------------|---------------|--------|
-| `2026.4.30-0.50.266` | v2026.4.30 | v0.50.266 | amd64 + arm64 |
-| `2026.4.23-0.50.156` | v2026.4.23 | v0.50.156 | amd64 + arm64 |
+| `2026.4.30-0.50.278` | v2026.4.30 | v0.50.278 | amd64 + arm64 |
+
+> **Full version history:** https://github.com/sunnysktsang/hermes-suite/releases
 
 ### Version Tag Format
 
 Suite tags follow the pattern `{agent_date}-{webui_semver}`:
 - **Agent**: date-based version from `nousresearch/hermes-agent` (e.g. `v2026.4.30`)
-- **WebUI**: semantic version from `nesquena/hermes-webui` (e.g. `v0.50.266`)
+- **WebUI**: semantic version from `nesquena/hermes-webui` (e.g. `v0.50.278`)
 
 The pinned pair for each release is declared in `versions.env`.
 
@@ -123,8 +123,8 @@ Or manually with pinned versions:
 ```bash
 podman build \
   --build-arg AGENT_VERSION=v2026.4.30 \
-  --build-arg HERMES_WEBUI_VERSION=v0.50.266 \
-  -t ascensionoid/hermes-suite:2026.4.30-0.50.266 .
+  --build-arg HERMES_WEBUI_VERSION=v0.50.278 \
+  -t ascensionoid/hermes-suite:2026.4.30-0.50.278 .
 ```
 
 ### 3. Create the network (if not already existing)
@@ -200,7 +200,7 @@ Edit `versions.env` to change the pinned versions:
 
 ```
 AGENT_VERSION=v2026.4.30
-WEBUI_VERSION=v0.50.266
+WEBUI_VERSION=v0.50.278
 ```
 
 Then rebuild:
