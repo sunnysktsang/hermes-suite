@@ -1,4 +1,5 @@
 # Hermes Suite — All-in-One Container Image
+![Docker Pulls](https://shields.io/docker/pulls/ascensionoid/hermes-suite)
 
 Single Docker/Podman image combining three Hermes services:
 
@@ -73,7 +74,7 @@ If you need a specific combination, pass the versions as build arguments:
 ```bash
 podman build \
   --build-arg AGENT_VERSION=v2026.5.7 \
-  --build-arg HERMES_WEBUI_VERSION=v0.51.22 \
+  --build-arg HERMES_WEBUI_VERSION=v0.51.27 \
   -t hermes-suite:2026.5.7-0.51.22 .
 ```
 
@@ -82,7 +83,7 @@ Or use the build helper (reads from `versions.env`):
 ```bash
 ./build.sh
 # Override defaults:
-# ./build.sh --agent v2026.5.7 --webui v0.51.22
+# ./build.sh --agent v2026.5.7 --webui v0.51.27
 ```
 
 ### Version Compatibility Table
@@ -90,7 +91,7 @@ Or use the build helper (reads from `versions.env`):
 Every release is an explicitly tested pair of Agent + WebUI on both amd64 and arm64.
 
 | Suite Tag | Agent Version | WebUI Version | Tested |
-| `2026.5.7-0.51.22` | v2026.5.7 | v0.51.22 | amd64 + arm64 |
+| `2026.5.7-0.51.27` | v2026.5.7 | v0.51.27 | amd64 + arm64 |
 
 > **Full version history:** https://github.com/sunnysktsang/hermes-suite/releases
 
@@ -98,7 +99,7 @@ Every release is an explicitly tested pair of Agent + WebUI on both amd64 and ar
 
 Suite tags follow the pattern `{agent_date}-{webui_semver}`:
 - **Agent**: date-based version from `nousresearch/hermes-agent` (e.g. `v2026.5.7`)
-- **WebUI**: semantic version from `nesquena/hermes-webui` (e.g. `v0.51.22`)
+- **WebUI**: semantic version from `nesquena/hermes-webui` (e.g. `v0.51.27`)
 
 The pinned pair for each release is declared in `versions.env`.
 
@@ -123,7 +124,7 @@ Or manually with pinned versions:
 ```bash
 podman build \
   --build-arg AGENT_VERSION=v2026.5.7 \
-  --build-arg HERMES_WEBUI_VERSION=v0.51.22 \
+  --build-arg HERMES_WEBUI_VERSION=v0.51.27 \
   -t ascensionoid/hermes-suite:2026.5.7-0.51.22 .
 ```
 
@@ -200,7 +201,7 @@ Edit `versions.env` to change the pinned versions:
 
 ```
 AGENT_VERSION=v2026.5.7
-WEBUI_VERSION=v0.51.22
+WEBUI_VERSION=v0.51.27
 ```
 
 Then rebuild:
