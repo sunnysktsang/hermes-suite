@@ -6,9 +6,12 @@
 # Override with: ./build.sh --agent v2026.5.16 --webui v0.51.74
 #
 # Build modes:
-#   (default)       Podman — child logs to /dev/stdout (docker logs)
-#   --docker        Docker — child logs to files with rotation (rootful compat)
+#   (default)       Podman — child logs to /dev/stdout (docker/podman logs)
 #   --docker-nolog  Docker — child logs to /dev/null (smallest footprint)
+#
+# Note: Docker CE is auto-detected at container startup (start.sh).
+# No separate --docker build flag is needed — the universe image works on
+# both Podman and Docker out of the box.
 # =============================================================================
 set -e
 
@@ -31,8 +34,6 @@ while [[ $# -gt 0 ]]; do
             AGENT_VERSION="$2"; shift 2 ;;
         --webui)
             WEBUI_VERSION="$2"; shift 2 ;;
-        --docker)
-            BUILD_MODE="docker"; BUILD_CMD="docker"; shift ;;
         --docker-nolog)
             BUILD_MODE="docker-nolog"; BUILD_CMD="docker"; shift ;;
         *)
@@ -45,16 +46,8 @@ AGENT_VER_CLEAN="${AGENT_VERSION#v}"
 WEBUI_VER_CLEAN="${WEBUI_VERSION#v}"
 IMAGE_TAG="ascensionoid/hermes-suite:${AGENT_VER_CLEAN}-${WEBUI_VER_CLEAN}"
 
-# --- Patch supervisord.conf for Docker modes ---
-if [ "$BUILD_MODE" = "docker" ]; then
-    sed -i \
-        -e 's|stdout_logfile=/dev/stdout|stdout_logfile=/var/log/supervisor/%(program_name)s-stdout.log|' \
-        -e 's|stderr_logfile=/dev/stderr|stderr_logfile=/var/log/supervisor/%(program_name)s-stderr.log|' \
-        -e 's|stdout_logfile_maxbytes=0|stdout_logfile_maxbytes=10MB|' \
-        -e 's|stderr_logfile_maxbytes=0|stderr_logfile_maxbytes=10MB|' \
-        "${BUILD_DIR}/supervisord.conf"
-    echo "Docker mode: child logs to /var/log/supervisor/ with 10MB rotation"
-elif [ "$BUILD_MODE" = "docker-nolog" ]; then
+# --- Patch supervisord.conf for docker-nolog mode ---
+if [ "$BUILD_MODE" = "docker-nolog" ]; then
     sed -i \
         -e 's|stdout_logfile=/dev/stdout|stdout_logfile=/dev/null|' \
         -e 's|stderr_logfile=/dev/stderr|stderr_logfile=/dev/null|' \
@@ -79,18 +72,14 @@ ${BUILD_CMD} build \
     $([ "${BUILD_CMD}" = "podman" ] && echo "--format docker") \
     "${BUILD_DIR}"
 
-# --- Restore supervisord.conf after Docker builds ---
-if [ "$BUILD_MODE" != "podman" ]; then
-    git -C "${BUILD_DIR}" checkout -- supervisord.conf 2>/dev/null \
-        || sed -i \
-            -e 's|stdout_logfile=/var/log/supervisor/%(program_name)s-stdout.log|stdout_logfile=/dev/stdout|' \
-            -e 's|stderr_logfile=/var/log/supervisor/%(program_name)s-stderr.log|stderr_logfile=/dev/stderr|' \
+# --- Restore supervisord.conf after docker-nolog build ---
+if [ "$BUILD_MODE" = "docker-nolog" ]; then
+    git -C "${BUILD_DIR}" checkout -- supervisord.conf 2>/dev/null || \
+        sed -i \
             -e 's|stdout_logfile=/dev/null|stdout_logfile=/dev/stdout|' \
             -e 's|stderr_logfile=/dev/null|stderr_logfile=/dev/stderr|' \
-            -e 's|stdout_logfile_maxbytes=10MB|stdout_logfile_maxbytes=0|' \
-            -e 's|stderr_logfile_maxbytes=10MB|stderr_logfile_maxbytes=0|' \
             "${BUILD_DIR}/supervisord.conf"
-    echo "Restored supervisord.conf to Podman defaults"
+    echo "Restored supervisord.conf to defaults"
 fi
 
 echo ""
