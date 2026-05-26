@@ -84,6 +84,10 @@ RUN cd /opt && \
 # Bake version tag into the webui
 RUN echo "__version__ = '${HERMES_WEBUI_VERSION}'" > /opt/hermes-webui/api/_version.py
 
+# Fix: webui process runs as hermes, but venv was built as root.
+# Without this, lazy-dep auto-install cannot write to site-packages (#6).
+RUN chown -R hermes:hermes /opt/hermes-webui/venv
+
 # ---------------------------------------------------------------------------
 # Stage 6: Set up supervisord config and startup script
 # ---------------------------------------------------------------------------
