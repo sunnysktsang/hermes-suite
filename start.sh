@@ -15,12 +15,15 @@ HERMES_HOME="${HERMES_HOME:-/opt/data}"
 INSTALL_DIR="/opt/hermes"
 
 # --- Helper: runtime detection ---
-# Detect Docker by checking cgroup — Podman-built images may contain a stale
-# /run/.containerenv file that gets baked into the image layer, so checking
-# that file alone is unreliable.  Checking /proc/1/cgroup for "docker" is
-# accurate at runtime because Docker inserts its own cgroup paths.
+# Detect Docker runtime. We check /.dockerenv first (created by Docker at
+# runtime, not by Podman) to handle cgroup v2 where /proc/1/cgroup shows
+# "0::/". Then fall back to cgroup v1 check as a backup. Podman-built images
+# may contain a stale /run/.containerenv baked into the image layer, so that
+# file alone is unreliable.
 is_docker() {
-    grep -q "/docker/" /proc/1/cgroup 2>/dev/null
+    [ -f /.dockerenv ] && return 0
+    grep -qaE '/docker/|docker-|containerd' /proc/1/cgroup 2>/dev/null && return 0
+    return 1
 }
 
 # --- Helper: directory and config setup (shared by both paths) ---
