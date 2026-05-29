@@ -6,7 +6,7 @@
 # Detection uses /proc/1/cgroup (reliable at runtime) rather than
 # /run/.containerenv (can be baked into the image by Podman at build time).
 #
-# Podman path:  root → chown → gosu hermes → re-exec → setup → supervisord (as hermes)
+# Podman path:  root → chown → s6-setuidgid hermes → re-exec → setup → supervisord (as hermes)
 # Docker path:  root → setup → chown → supervisord (as root, children as hermes via user=)
 # =============================================================================
 set -e
@@ -121,13 +121,14 @@ if [ "$(id -u)" = "0" ]; then
         exec "$@"
     fi
 
-    # Podman (or unknown runtime): drop to hermes, re-exec this script
+    # Podman (or unknown runtime): drop to hermes via s6-setuidgid, re-exec this script
+    # s6-setuidgid is provided by the s6-overlay in the base agent image (v2026.5.29+)
     echo "Detected Podman runtime"
     echo "Dropping root privileges"
-    exec gosu hermes "$0" "$@"
+    exec /command/s6-setuidgid hermes "$0" "$@"
 fi
 
-# --- Running as hermes (Podman path only, via gosu re-exec) ---
+# --- Running as hermes (Podman path only, via s6-setuidgid re-exec) ---
 setup_hermes
 print_banner
 exec "$@"

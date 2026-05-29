@@ -17,7 +17,7 @@
 # ---------------------------------------------------------------------------
 # Stage 1: Use the official hermes-agent image as the base
 # This already contains: Python 3.13, Node.js, npm, Playwright, agent code,
-# the built-in web dashboard (hermes dashboard), the gateway, uv, and gosu.
+# the built-in web dashboard (hermes dashboard), the gateway, uv, and s6-overlay.
 # ---------------------------------------------------------------------------
 ARG AGENT_VERSION=v2026.5.16
 FROM docker.io/nousresearch/hermes-agent:${AGENT_VERSION}
