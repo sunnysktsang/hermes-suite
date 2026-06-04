@@ -224,12 +224,16 @@ CONTAINER_RUNTIME=auto
 
 # Use sudo for commands (rootful mode): true, false
 USE_SUDO=false
+
+# Include WhatsApp bridge: true, false (default: false)
+ENABLE_WHATSAPP_BRIDGE=false
 ```
 
 | Setting | Options | Default | Description |
 |---------|---------|---------|-------------|
 | `CONTAINER_RUNTIME` | `auto`, `podman`, `docker`, `docker-nolog` | `auto` | Which runtime helper scripts use. `auto` detects at script time. |
 | `USE_SUDO` | `true`, `false` | `false` | Run docker/podman commands with sudo (rootful mode) |
+| `ENABLE_WHATSAPP_BRIDGE` | `true`, `false` | `false` | Include WhatsApp bridge in the built image |
 
 Then rebuild:
 
@@ -242,6 +246,29 @@ Or override at build time:
 ```bash
 ./build.sh --agent v2026.4.16 --webui v0.50.244
 ```
+
+### WhatsApp Bridge
+
+The WhatsApp bridge is **not included** in the image by default. This is intentional:
+
+- The bridge uses [Baileys](https://github.com/WhiskeySockets/Baileys) to emulate a WhatsApp Web session
+- Without proper configuration, **anyone who messages your number gets full agent access** (terminal, filesystem, browser)
+- See [upstream issue #15108](https://github.com/NousResearch/hermes-agent/issues/15108) for details
+
+To include the WhatsApp bridge at build time:
+
+```bash
+# Option 1: CLI flag
+./build.sh --whatsapp
+
+# Option 2: Set in versions.env
+ENABLE_WHATSAPP_BRIDGE=true
+./build.sh
+```
+
+> **Warning:** If you enable the WhatsApp bridge, you **must** configure `WHATSAPP_ALLOWED_USERS`
+> in `~/.hermes/.env` before starting the gateway. Without this setting, the bridge denies all
+> incoming messages by default.
 
 ### Changing the workspace path
 

@@ -15,6 +15,10 @@
 #   false — run build command directly (default)
 #   true  — prefix build command with sudo (for rootful podman/docker)
 #
+# ENABLE_WHATSAPP_BRIDGE (from versions.env or --whatsapp flag):
+#   false — exclude WhatsApp bridge from image (default)
+#   true  — include WhatsApp bridge in image
+#
 # Note: Docker CE is auto-detected at container startup (start.sh).
 # The universal image works on both Podman and Docker out of the box.
 # =============================================================================
@@ -24,7 +28,7 @@ BUILD_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # --- Load pinned versions and runtime from versions.env ---
 if [ -f "${BUILD_DIR}/versions.env" ]; then
-    eval "$(grep -E '^(AGENT_VERSION|WEBUI_VERSION|CONTAINER_RUNTIME|USE_SUDO)=' "${BUILD_DIR}/versions.env")"
+    eval "$(grep -E '^(AGENT_VERSION|WEBUI_VERSION|CONTAINER_RUNTIME|USE_SUDO|ENABLE_WHATSAPP_BRIDGE)=' "${BUILD_DIR}/versions.env")"
 else
     echo "ERROR: versions.env not found in ${BUILD_DIR}"
     exit 1
@@ -47,6 +51,8 @@ while [[ $# -gt 0 ]]; do
             USE_SUDO="true"; shift ;;
         --no-sudo)
             USE_SUDO="false"; shift ;;
+        --whatsapp)
+            ENABLE_WHATSAPP_BRIDGE="true"; shift ;;
         *)
             echo "Unknown option: $1"; exit 1 ;;
     esac
@@ -113,6 +119,7 @@ echo " WebUI version:  ${WEBUI_VERSION}"
 echo " Image tag:      ${IMAGE_TAG}"
 echo " Runtime:        ${CONTAINER_RUNTIME}"
 echo " Sudo:           ${USE_SUDO}"
+echo " WhatsApp:       ${ENABLE_WHATSAPP_BRIDGE}"
 echo " Build context:  ${BUILD_DIR}"
 echo "=========================================="
 
@@ -121,6 +128,7 @@ if [ "$BUILD_CMD" = "podman" ]; then
     $SUDO_PREFIX podman build \
         --build-arg AGENT_VERSION="${AGENT_VERSION}" \
         --build-arg HERMES_WEBUI_VERSION="${WEBUI_VERSION}" \
+        --build-arg ENABLE_WHATSAPP_BRIDGE="${ENABLE_WHATSAPP_BRIDGE}" \
         -t "${IMAGE_TAG}" \
         --format docker \
         "${BUILD_DIR}"
@@ -128,6 +136,7 @@ else
     $SUDO_PREFIX docker build \
         --build-arg AGENT_VERSION="${AGENT_VERSION}" \
         --build-arg HERMES_WEBUI_VERSION="${WEBUI_VERSION}" \
+        --build-arg ENABLE_WHATSAPP_BRIDGE="${ENABLE_WHATSAPP_BRIDGE}" \
         -t "${IMAGE_TAG}" \
         "${BUILD_DIR}"
 fi

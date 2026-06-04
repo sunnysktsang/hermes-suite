@@ -20,6 +20,7 @@
 # the built-in web dashboard (hermes dashboard), the gateway, uv, and s6-overlay.
 # ---------------------------------------------------------------------------
 ARG AGENT_VERSION=v2026.5.29.2
+ARG ENABLE_WHATSAPP_BRIDGE=false
 FROM docker.io/nousresearch/hermes-agent:${AGENT_VERSION}
 
 USER root
@@ -45,11 +46,14 @@ RUN echo "hermes ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 # ---------------------------------------------------------------------------
 # Stage 3: Install Browser tool dependencies for agent
 # npm install + Playwright chromium (needed by browser toolset)
+# WhatsApp bridge is removed by default (ENABLE_WHATSAPP_BRIDGE=false).
+# Set --build-arg ENABLE_WHATSAPP_BRIDGE=true or use --whatsapp flag in
+# build.sh to include it.
 # ---------------------------------------------------------------------------
 RUN cd /opt/hermes && \
     npm install --prefer-offline --no-audit && \
     npx playwright install --with-deps chromium && \
-    rm -rf /opt/hermes/scripts/whatsapp-bridge && \
+    if [ "$ENABLE_WHATSAPP_BRIDGE" != "true" ]; then rm -rf /opt/hermes/scripts/whatsapp-bridge; fi && \
     rm -rf /var/lib/apt/lists/*
 
 # ---------------------------------------------------------------------------
@@ -100,6 +104,7 @@ RUN chmod +x /opt/hermes-suite/start.sh
 # ---------------------------------------------------------------------------
 # Re-declare ARGs after FROM so they are available in LABEL
 ARG AGENT_VERSION=v2026.5.29.2
+ARG ENABLE_WHATSAPP_BRIDGE=false
 ARG HERMES_WEBUI_VERSION=v0.51.230
 
 LABEL org.opencontainers.image.title="Hermes Suite" \
