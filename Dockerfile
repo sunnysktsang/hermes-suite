@@ -74,6 +74,9 @@ RUN mkdir -p /var/log/supervisor /var/run/supervisor && \
 # The webui is a Python web server (server.py). We clone it from GitHub
 # and set up its own venv using uv (avoids python3-venv package requirement).
 # The webui needs the agent's Python deps to import agent modules.
+# We install with the same extras the base image bakes into /opt/hermes/.venv
+# (all, messaging, anthropic, bedrock, azure-identity, hindsight) so the
+# webui's in-process agent has working memory and provider backends (#16).
 #
 # PIN to a specific tag for reproducible builds — never use 'master'.
 # ---------------------------------------------------------------------------
@@ -83,14 +86,13 @@ RUN cd /opt && \
         https://github.com/nesquena/hermes-webui.git hermes-webui && \
     uv venv /opt/hermes-webui/venv && \
     uv pip install --python /opt/hermes-webui/venv/bin/python3 --no-cache-dir -r /opt/hermes-webui/requirements.txt && \
-    uv pip install --python /opt/hermes-webui/venv/bin/python3 --no-cache-dir -e "/opt/hermes" && \
+    uv pip install --python /opt/hermes-webui/venv/bin/python3 --no-cache-dir -e "/opt/hermes[all,messaging,anthropic,bedrock,azure-identity,hindsight]" && \
     rm -rf /opt/hermes-webui/.git
 
 # Bake version tag into the webui
 RUN echo "__version__ = '${HERMES_WEBUI_VERSION}'" > /opt/hermes-webui/api/_version.py
 
-# Fix: webui process runs as hermes, but venv was built as root.
-# Without this, lazy-dep auto-install cannot write to site-packages (#6).
+# Ensure venv is owned by hermes so runtime lazy-dep auto-install works (#6).
 RUN chown -R hermes:hermes /opt/hermes-webui/venv
 
 # ---------------------------------------------------------------------------
