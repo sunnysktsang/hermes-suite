@@ -10,7 +10,7 @@
 #   hermes-dashboard — Built-in monitoring dashboard on port 9119
 #   hermes-webui     — Browser chat interface on port 8787
 #
-# Build:  podman build -t hermes-suite:2026.6.19-0.51.742 .
+# Build:  podman build -t hermes-suite:2026.7.1-0.51.882 .
 # Run:    podman-compose up -d
 # =============================================================================
 
@@ -19,7 +19,7 @@
 # This already contains: Python 3.13, Node.js, npm, Playwright, agent code,
 # the built-in web dashboard (hermes dashboard), the gateway, uv, and s6-overlay.
 # ---------------------------------------------------------------------------
-ARG AGENT_VERSION=v2026.6.19
+ARG AGENT_VERSION=v2026.7.1
 ARG ENABLE_WHATSAPP_BRIDGE=false
 FROM docker.io/nousresearch/hermes-agent:${AGENT_VERSION}
 
@@ -80,7 +80,7 @@ RUN mkdir -p /var/log/supervisor /var/run/supervisor && \
 #
 # PIN to a specific tag for reproducible builds — never use 'master'.
 # ---------------------------------------------------------------------------
-ARG HERMES_WEBUI_VERSION=v0.51.742
+ARG HERMES_WEBUI_VERSION=v0.51.882
 RUN cd /opt && \
     git clone --depth 1 --branch ${HERMES_WEBUI_VERSION} \
         https://github.com/nesquena/hermes-webui.git hermes-webui && \
@@ -103,12 +103,20 @@ COPY start.sh /opt/hermes-suite/start.sh
 RUN chmod +x /opt/hermes-suite/start.sh
 
 # ---------------------------------------------------------------------------
+# Patch: disable dashboard auto-sso — the upstream middleware auto-redirects
+# to /auth/login (OAuth start) when a single provider is registered, but
+# BasicAuthProvider is password-only and raises NotImplementedError there.
+# Skip it so unauthenticated requests go directly to /login (password form).
+# ---------------------------------------------------------------------------
+RUN sed -i 's/auto = _auto_sso_response(request)/auto = None  # disabled: BasicAuthProvider has no OAuth start flow/'     /opt/hermes/hermes_cli/dashboard_auth/middleware.py
+
+# ---------------------------------------------------------------------------
 # Stage 7: Environment, labels, and runtime config
 # ---------------------------------------------------------------------------
 # Re-declare ARGs after FROM so they are available in LABEL
-ARG AGENT_VERSION=v2026.6.19
+ARG AGENT_VERSION=v2026.7.1
 ARG ENABLE_WHATSAPP_BRIDGE=false
-ARG HERMES_WEBUI_VERSION=v0.51.742
+ARG HERMES_WEBUI_VERSION=v0.51.882
 
 LABEL org.opencontainers.image.title="Hermes Suite" \
       org.opencontainers.image.description="All-in-one: hermes-agent + hermes-webui + hermes-dashboard" \

@@ -66,7 +66,7 @@ If you prefer not to build manually, use our pre-verified image tags from
 [Docker Hub](https://hub.docker.com/r/ascensionoid/hermes-suite):
 
 ```bash
-podman pull ascensionoid/hermes-suite:2026.6.19-0.51.742
+podman pull ascensionoid/hermes-suite:2026.7.1-0.51.882
 ```
 
 ### Manual Build with Specific Versions
@@ -75,9 +75,9 @@ If you need a specific combination, pass the versions as build arguments:
 
 ```bash
 podman build \
-  --build-arg AGENT_VERSION=v2026.6.19 \
-  --build-arg HERMES_WEBUI_VERSION=v0.51.742 \
-  -t hermes-suite:2026.6.19-0.51.742 .
+  --build-arg AGENT_VERSION=v2026.7.1 \
+  --build-arg HERMES_WEBUI_VERSION=v0.51.882 \
+  -t hermes-suite:2026.7.1-0.51.882 .
 ```
 
 Or use the build helper (reads from `versions.env`):
@@ -93,7 +93,7 @@ Or use the build helper (reads from `versions.env`):
 ./build.sh --docker-nolog
 
 # Override defaults:
-# ./build.sh --agent v2026.6.19 --webui v0.51.742
+# ./build.sh --agent v2026.7.1 --webui v0.51.882
 ```
 
 > **Docker compatibility:** Docker CE is auto-detected at container startup via /proc/1/cgroup.
@@ -107,15 +107,15 @@ Every release is an explicitly tested pair of Agent + WebUI on both amd64 and ar
 
 | Suite Tag | Agent Version | WebUI Version | Tested |
 |-----------|---------------|---------------|--------|
-| `2026.6.19-0.51.742` | v2026.6.19 | v0.51.742 | amd64 + arm64 |
+| `2026.7.1-0.51.882` | v2026.7.1 | v0.51.882 | amd64 + arm64 |
 
 > **Full version history:** https://github.com/sunnysktsang/hermes-suite/releases
 
 ### Version Tag Format
 
 Suite tags follow the pattern `{agent_date}-{webui_semver}`:
-- **Agent**: date-based version from `nousresearch/hermes-agent` (e.g. `v2026.6.19`)
-- **WebUI**: semantic version from `nesquena/hermes-webui` (e.g. `v0.51.742`)
+- **Agent**: date-based version from `nousresearch/hermes-agent` (e.g. `v2026.7.1`)
+- **WebUI**: semantic version from `nesquena/hermes-webui` (e.g. `v0.51.882`)
 
 The pinned pair for each release is declared in `versions.env`.
 
@@ -139,9 +139,9 @@ Or manually with pinned versions:
 
 ```bash
 podman build \
-  --build-arg AGENT_VERSION=v2026.6.19 \
-  --build-arg HERMES_WEBUI_VERSION=v0.51.742 \
-  -t ascensionoid/hermes-suite:2026.6.19-0.51.742 .
+  --build-arg AGENT_VERSION=v2026.7.1 \
+  --build-arg HERMES_WEBUI_VERSION=v0.51.882 \
+  -t ascensionoid/hermes-suite:2026.7.1-0.51.882 .
 ```
 
 ### 3. Create the network (if not already existing)
@@ -172,7 +172,39 @@ created automatically from the hermes-agent examples.
 
 - Gateway:   http://localhost:8642
 - WebUI:     http://localhost:8787
-- Dashboard: http://localhost:9119
+- Dashboard: http://localhost:9119 (login: admin/admin by default — see [Dashboard Authentication](#dashboard-authentication))
+
+### Dashboard Authentication
+
+Since hermes-agent v2026.7.1, the dashboard requires authentication to access
+on a non-loopback bind. Hermes Suite provides this via the `DASHBOARD_CREDENTIAL`
+setting in `versions.env`:
+
+```env
+# Default - works immediately, no setup needed:
+DASHBOARD_CREDENTIAL=admin:admin
+
+# Auto-generate a random password (printed by up.sh on first start):
+DASHBOARD_CREDENTIAL=auto
+
+# Use your own credentials:
+DASHBOARD_CREDENTIAL=myuser:mypassword
+```
+
+The credential is displayed in the `up.sh` output when the container starts:
+
+```
+Hermes Suite is running:
+  Gateway:    http://localhost:8642
+  WebUI:      http://localhost:8787
+  Dashboard:  http://localhost:9119
+
+  Dashboard Login ID: admin
+  Dashboard Password: admin
+```
+
+When set to `auto`, a random password is generated once and persisted to
+`.dashboard_credential` (in the repo directory) so it survives container restarts.
 
 ## Configuration
 
@@ -216,14 +248,17 @@ podman exec hermes-suite supervisorctl status
 Edit `versions.env` to change the pinned versions and runtime settings:
 
 ```env
-AGENT_VERSION=v2026.6.19
-WEBUI_VERSION=v0.51.742
+AGENT_VERSION=v2026.7.1
+WEBUI_VERSION=v0.51.882
 
 # Runtime selector: auto (default), podman, docker, docker-nolog
 CONTAINER_RUNTIME=auto
 
 # Use sudo for commands (rootful mode): true, false
 USE_SUDO=false
+
+# Dashboard login: "username:password", "auto", or "admin:admin" (default)
+DASHBOARD_CREDENTIAL=admin:admin
 
 # Include WhatsApp bridge: true, false (default: false)
 ENABLE_WHATSAPP_BRIDGE=false
@@ -233,6 +268,7 @@ ENABLE_WHATSAPP_BRIDGE=false
 |---------|---------|---------|-------------|
 | `CONTAINER_RUNTIME` | `auto`, `podman`, `docker`, `docker-nolog` | `auto` | Which runtime helper scripts use. `auto` detects at script time. |
 | `USE_SUDO` | `true`, `false` | `false` | Run docker/podman commands with sudo (rootful mode) |
+| `DASHBOARD_CREDENTIAL` | `admin:admin`, `auto`, `user:pass` | `admin:admin` | Dashboard login credential |
 | `ENABLE_WHATSAPP_BRIDGE` | `true`, `false` | `false` | Include WhatsApp bridge in the built image |
 
 Then rebuild:
@@ -338,6 +374,12 @@ The dashboard needs the gateway running first. Check supervisord status:
 ```bash
 podman exec hermes-suite supervisorctl status
 ```
+
+### Dashboard asks for a login
+
+Since hermes-agent v2026.7.1, the dashboard requires authentication. The default
+credential is `admin:admin` (configured in `versions.env`). To change it, see
+[Dashboard Authentication](#dashboard-authentication).
 
 ### Build fails on git clone
 

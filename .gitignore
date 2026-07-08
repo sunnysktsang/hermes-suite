@@ -16,6 +16,9 @@ hermes/
 *.tar.gz
 *.log
 
+# Auto-generated dashboard credentials (when DASHBOARD_CREDENTIAL=auto)
+.dashboard_credential
+
 # OS files
 .DS_Store
 Thumbs.db

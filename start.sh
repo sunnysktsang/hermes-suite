@@ -26,6 +26,19 @@ is_docker() {
     return 1
 }
 
+# --- Helper: dashboard auth credential setup ---
+# Upstream v2026.7.1 removed unauthenticated public dashboard access.
+# Credentials are provided via DASHBOARD_CREDENTIAL env var (format:
+# "username:password"), set by up.sh from versions.env. Parse and export
+# the two vars the dashboard's BasicAuthProvider reads.
+setup_dashboard_auth() {
+    local cred="${DASHBOARD_CREDENTIAL:-admin:admin}"
+    DASH_USER="${cred%%:*}"
+    DASH_PASS="${cred#*:}"
+    export HERMES_DASHBOARD_BASIC_AUTH_USERNAME="$DASH_USER"
+    export HERMES_DASHBOARD_BASIC_AUTH_PASSWORD="$DASH_PASS"
+}
+
 # --- Helper: directory and config setup (shared by both paths) ---
 setup_hermes() {
     source "${INSTALL_DIR}/.venv/bin/activate"
@@ -61,6 +74,9 @@ setup_hermes() {
         python3 "$INSTALL_DIR/tools/skills_sync.py" 2>/dev/null || true
     fi
 
+    # --- Dashboard basic auth (upstream v2026.7.1 security hardening) ---
+    setup_dashboard_auth
+
     # --- Clean up stale PID/lock files from previous container runs ---
     for f in gateway.pid gateway.lock; do
         if [ -f "$HERMES_HOME/$f" ]; then
@@ -81,6 +97,8 @@ print_banner() {
     echo " Gateway:    http://0.0.0.0:8642"
     echo " Dashboard:  http://0.0.0.0:9119"
     echo " WebUI:      http://0.0.0.0:8787"
+    echo "=========================================="
+    echo " Dashboard login: $HERMES_DASHBOARD_BASIC_AUTH_USERNAME / $HERMES_DASHBOARD_BASIC_AUTH_PASSWORD"
     echo "=========================================="
 }
 

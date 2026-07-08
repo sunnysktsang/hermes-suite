@@ -9,10 +9,31 @@ COMPOSE_FILE="${SCRIPT_DIR}/docker-compose.yaml"
 
 # --- Load config from versions.env ---
 if [ -f "${SCRIPT_DIR}/versions.env" ]; then
-    eval "$(grep -E '^(AGENT_VERSION|WEBUI_VERSION|CONTAINER_RUNTIME|USE_SUDO)=' "${SCRIPT_DIR}/versions.env")"
+    eval "$(grep -E '^(AGENT_VERSION|WEBUI_VERSION|CONTAINER_RUNTIME|USE_SUDO|DASHBOARD_CREDENTIAL)=' "${SCRIPT_DIR}/versions.env")"
 fi
 CONTAINER_RUNTIME="${CONTAINER_RUNTIME:-auto}"
 USE_SUDO="${USE_SUDO:-false}"
+
+# --- Dashboard credentials ---
+# DASHBOARD_CREDENTIAL controls the dashboard login. Options:
+#   admin:admin    — default, works immediately
+#   auto           — auto-generate a random password (persisted, printed below)
+#   user:password  — custom credentials
+DASHBOARD_CREDENTIAL="${DASHBOARD_CREDENTIAL:-admin:admin}"
+
+if [ "$DASHBOARD_CREDENTIAL" = "auto" ]; then
+    CRED_FILE="${SCRIPT_DIR}/.dashboard_credential"
+    if [ -f "$CRED_FILE" ]; then
+        DASHBOARD_CREDENTIAL=$(cat "$CRED_FILE")
+    else
+        PASSWORD=$(python3 -c "import secrets; print(secrets.token_urlsafe(16))")
+        DASHBOARD_CREDENTIAL="admin:${PASSWORD}"
+        echo "$DASHBOARD_CREDENTIAL" > "$CRED_FILE"
+        chmod 600 "$CRED_FILE"
+    fi
+fi
+
+export DASHBOARD_CREDENTIAL
 
 # --- Auto-detect ---
 if [ "$CONTAINER_RUNTIME" = "auto" ]; then
@@ -39,7 +60,7 @@ export HERMES_SUITE_IMAGE_TAG="${AGENT_VER_CLEAN}-${WEBUI_VER_CLEAN}"
 
 # For sudo: compose needs explicit env passthrough
 if [ "$USE_SUDO" = "true" ]; then
-    COMPOSE_PREFIX="sudo env HERMES_SUITE_IMAGE_TAG=${HERMES_SUITE_IMAGE_TAG}"
+    COMPOSE_PREFIX="sudo env HERMES_SUITE_IMAGE_TAG=${HERMES_SUITE_IMAGE_TAG} DASHBOARD_CREDENTIAL=${DASHBOARD_CREDENTIAL}"
 else
     COMPOSE_PREFIX=""
 fi
@@ -88,5 +109,10 @@ echo "  Gateway:    http://localhost:8642"
 echo "  WebUI:      http://localhost:8787"
 echo "  Dashboard:  http://localhost:9119"
 echo ""
-echo " Logs: ./logs.sh"
-echo " Stop: ./down.sh"
+DASH_USER="${DASHBOARD_CREDENTIAL%%:*}"
+DASH_PASS="${DASHBOARD_CREDENTIAL#*:}"
+echo "  Dashboard Login ID: $DASH_USER"
+echo "  Dashboard Password: $DASH_PASS"
+echo ""
+echo "Logs: ./logs.sh"
+echo "Stop: ./down.sh"
