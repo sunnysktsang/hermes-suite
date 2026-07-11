@@ -46,14 +46,14 @@ setup_hermes() {
     # Create essential directory structure (mirrors official entrypoint)
     mkdir -p "$HERMES_HOME"/{cron,sessions,logs,hooks,memories,skills,skins,plans,workspace,home,webui,cache}
 
-    # .env — only create if missing
-    if [ ! -f "$HERMES_HOME/.env" ]; then
+    # .env — only create if missing (newer agent images may not ship .env.example)
+    if [ ! -f "$HERMES_HOME/.env" ] && [ -f "$INSTALL_DIR/.env.example" ]; then
         cp "$INSTALL_DIR/.env.example" "$HERMES_HOME/.env"
         echo "Created default .env — edit $HERMES_HOME/.env to add your API keys"
     fi
 
     # config.yaml — only create if missing
-    if [ ! -f "$HERMES_HOME/config.yaml" ]; then
+    if [ ! -f "$HERMES_HOME/config.yaml" ] && [ -f "$INSTALL_DIR/cli-config.yaml.example" ]; then
         cp "$INSTALL_DIR/cli-config.yaml.example" "$HERMES_HOME/config.yaml"
         echo "Created default config.yaml"
     fi
@@ -65,7 +65,7 @@ setup_hermes() {
     fi
 
     # SOUL.md — only create if missing
-    if [ ! -f "$HERMES_HOME/SOUL.md" ]; then
+    if [ ! -f "$HERMES_HOME/SOUL.md" ] && [ -f "$INSTALL_DIR/docker/SOUL.md" ]; then
         cp "$INSTALL_DIR/docker/SOUL.md" "$HERMES_HOME/SOUL.md"
     fi
 
