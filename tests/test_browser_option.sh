@@ -6,8 +6,10 @@
 #   bash tests/test_browser_option.sh
 #
 # Covers: default unchanged (INSTALL_BROWSER=true, no tag suffix), --no-browser
-# flag, ENABLE_BROWSER=false in versions.env, invalid value rejected, and
-# tag-suffix symmetry with up.sh/down.sh derivation.
+# flag, ENABLE_BROWSER=false in versions.env, invalid value rejected,
+# tag-suffix symmetry with up.sh/down.sh derivation, persistence of the
+# effective flag back to versions.env, --browser force-true, and idempotent
+# re-runs.
 # =============================================================================
 set -u
 
@@ -40,6 +42,15 @@ run_build() { ( cd "${WORK}/repo" && env PATH="${BIN}:$PATH" \
     CAPTURE_FILE="${WORK}/$1.args" ./build.sh "${@:2}" ) >"${WORK}/$1.out" 2>&1; }
 tag_of() { grep -o -- '-t [^ ]*' "${WORK}/$1.args" 2>/dev/null | awk '{print $2}'; }
 
+# Expected compound tag derived from versions.env — nothing hardcoded, so the
+# suite survives version bumps without edits.
+ver_clean() { sed 's/^v//' <<<"$1"; }
+AGENT_PIN="$(grep -E '^AGENT_VERSION=' "${REPO_DIR}/versions.env" | cut -d= -f2)"
+WEBUI_PIN="$(grep -E '^WEBUI_VERSION=' "${REPO_DIR}/versions.env" | cut -d= -f2)"
+EXPECTED_TAG="$(ver_clean "$AGENT_PIN")-$(ver_clean "$WEBUI_PIN")"
+OVERRIDE_AGENT="v2026.7.7.2"   # arbitrary older agent, test input only
+OVERRIDE_TAG="$(ver_clean "$OVERRIDE_AGENT")-$(ver_clean "$WEBUI_PIN")-slim"
+
 echo "== syntax =="
 for f in build.sh up.sh down.sh; do
     bash -n "${REPO_DIR}/$f" 2>/dev/null && ok "bash -n $f" || bad "bash -n $f"
@@ -49,14 +60,14 @@ echo "== default: browser installed, tag unchanged =="
 fresh_repo
 run_build def
 eq "exit code" "0" "$?"
-eq "image tag has no suffix" "ascensionoid/hermes-suite:2026.7.20-0.52.106" "$(tag_of def)"
+eq "image tag has no suffix" "ascensionoid/hermes-suite:${EXPECTED_TAG}" "$(tag_of def)"
 grep -q -- '--build-arg INSTALL_BROWSER=true' "${WORK}/def.args" && ok "INSTALL_BROWSER=true passed" || bad "INSTALL_BROWSER=true passed"
 
 echo "== --no-browser flag: skipped, -slim suffix =="
 fresh_repo
 run_build nb --no-browser
 eq "exit code" "0" "$?"
-eq "image tag -slim suffix" "ascensionoid/hermes-suite:2026.7.20-0.52.106-slim" "$(tag_of nb)"
+eq "image tag -slim suffix" "ascensionoid/hermes-suite:${EXPECTED_TAG}-slim" "$(tag_of nb)"
 grep -q -- '--build-arg INSTALL_BROWSER=false' "${WORK}/nb.args" && ok "INSTALL_BROWSER=false passed" || bad "INSTALL_BROWSER=false passed"
 grep -q 'Browser:        false' "${WORK}/nb.out" && ok "summary shows Browser: false" || bad "summary shows Browser: false"
 
@@ -65,16 +76,16 @@ fresh_repo
 sed -i 's/^#ENABLE_BROWSER=false/ENABLE_BROWSER=false/' "${WORK}/repo/versions.env"
 run_build envf
 eq "exit code" "0" "$?"
-eq "image tag -slim suffix" "ascensionoid/hermes-suite:2026.7.20-0.52.106-slim" "$(tag_of envf)"
+eq "image tag -slim suffix" "ascensionoid/hermes-suite:${EXPECTED_TAG}-slim" "$(tag_of envf)"
 grep -q -- '--build-arg INSTALL_BROWSER=false' "${WORK}/envf.args" && ok "INSTALL_BROWSER=false passed" || bad "INSTALL_BROWSER=false passed"
 
 echo "== flag overrides versions.env (explicit true wins over file) =="
 fresh_repo
 sed -i 's/^#ENABLE_BROWSER=false/ENABLE_BROWSER=false/' "${WORK}/repo/versions.env"
-# no CLI true-flag exists; but file false + no flag = false (covered above).
+# --browser force-true over a file false is covered in a later section.
 # Here: file false + --agent override still slim:
 run_build ov --agent v2026.7.7.2
-eq "override keeps -slim" "ascensionoid/hermes-suite:2026.7.7.2-0.52.106-slim" "$(tag_of ov)"
+eq "override keeps -slim" "ascensionoid/hermes-suite:${OVERRIDE_TAG}" "$(tag_of ov)"
 grep -q -- '--build-arg AGENT_VERSION=v2026.7.7.2' "${WORK}/ov.args" && ok "agent override passed" || bad "agent override passed"
 
 echo "== invalid ENABLE_BROWSER rejected =="
@@ -123,18 +134,51 @@ sed -i 's/^#ENABLE_BROWSER=false/ENABLE_BROWSER=false/' "${WORK}/repo/versions.e
 ( cd "${WORK}/repo" && env HOME="${WORK}/home" PATH="${BIN}:$PATH" CAPTURE_FILE="${WORK}/up.args" \
   bash up.sh ) >"${WORK}/up.out" 2>&1
 eq "up.sh exit" "0" "$?"
-grep -q "TAG-IN-ENV: 2026.7.20-0.52.106-slim" "${WORK}/up.args" && ok "up.sh exports slim tag for compose" || bad "up.sh exports slim tag for compose"
+grep -q "TAG-IN-ENV: ${EXPECTED_TAG}-slim" "${WORK}/up.args" && ok "up.sh exports slim tag for compose" || bad "up.sh exports slim tag for compose"
 ( cd "${WORK}/repo" && env HOME="${WORK}/home" PATH="${BIN}:$PATH" CAPTURE_FILE="${WORK}/down.args" \
   bash down.sh ) >"${WORK}/down.out" 2>&1
 eq "down.sh exit" "0" "$?"
-grep -q "TAG-IN-ENV: 2026.7.20-0.52.106-slim" "${WORK}/down.args" && ok "down.sh targets slim tag" || bad "down.sh targets slim tag"
+grep -q "TAG-IN-ENV: ${EXPECTED_TAG}-slim" "${WORK}/down.args" && ok "down.sh targets slim tag" || bad "down.sh targets slim tag"
 
 echo "== up.sh / down.sh default tag unchanged (no ENABLE_BROWSER set) =="
 fresh_repo
 ( cd "${WORK}/repo" && env HOME="${WORK}/home" PATH="${BIN}:$PATH" CAPTURE_FILE="${WORK}/updef.args" \
   bash up.sh ) >"${WORK}/updef.out" 2>&1
-grep -q "TAG-IN-ENV: 2026.7.20-0.52.106" "${WORK}/updef.args" && ! grep -q "slim" "${WORK}/updef.args" \
+grep -q "TAG-IN-ENV: ${EXPECTED_TAG}" "${WORK}/updef.args" && ! grep -q "slim" "${WORK}/updef.args" \
     && ok "default up.sh tag has no suffix" || bad "default up.sh tag has no suffix"
+
+echo "== persistence: --no-browser flag written back to versions.env =="
+fresh_repo
+run_build pers --no-browser
+eq "exit code" "0" "$?"
+grep -q '^ENABLE_BROWSER=false' "${WORK}/repo/versions.env" && ok "versions.env records ENABLE_BROWSER=false" || bad "versions.env records ENABLE_BROWSER=false"
+grep -q 'Browser setting persisted' "${WORK}/pers.out" && ok "persistence announced" || bad "persistence announced"
+mkdir -p "${WORK}/home"
+( cd "${WORK}/repo" && env HOME="${WORK}/home" PATH="${BIN}:$PATH" CAPTURE_FILE="${WORK}/persup.args" \
+  bash up.sh ) >"${WORK}/persup.out" 2>&1
+grep -q "TAG-IN-ENV: ${EXPECTED_TAG}-slim" "${WORK}/persup.args" && ok "up.sh derives slim after persisted flag" || bad "up.sh derives slim after persisted flag"
+
+echo "== persistence: default build leaves versions.env untouched =="
+fresh_repo
+run_build ptouch
+eq "exit code" "0" "$?"
+grep -qE '^ENABLE_BROWSER=' "${WORK}/repo/versions.env" && bad "default build must not write ENABLE_BROWSER" || ok "default build must not write ENABLE_BROWSER"
+grep -q '^#ENABLE_BROWSER=false' "${WORK}/repo/versions.env" && ok "commented example preserved as comment" || bad "commented example preserved as comment"
+
+echo "== --browser flag overrides file false and flips it back =="
+fresh_repo
+sed -i 's/^#ENABLE_BROWSER=false/ENABLE_BROWSER=false/' "${WORK}/repo/versions.env"
+run_build fb --browser
+eq "exit code" "0" "$?"
+eq "--browser over file-false: full tag, no suffix" "ascensionoid/hermes-suite:${EXPECTED_TAG}" "$(tag_of fb)"
+grep -q -- '--build-arg INSTALL_BROWSER=true' "${WORK}/fb.args" && ok "INSTALL_BROWSER=true passed" || bad "INSTALL_BROWSER=true passed"
+grep -q '^ENABLE_BROWSER=true' "${WORK}/repo/versions.env" && ok "file flipped back to true" || bad "file flipped back to true"
+
+echo "== persistence is idempotent (no duplicate lines) =="
+fresh_repo
+run_build idem --no-browser
+run_build idem2 --no-browser
+eq "exactly one ENABLE_BROWSER line after re-run" "1" "$(grep -c '^ENABLE_BROWSER=' "${WORK}/repo/versions.env")"
 
 echo ""
 echo "=========================================="
