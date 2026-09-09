@@ -55,6 +55,8 @@ while [[ $# -gt 0 ]]; do
             ENABLE_WHATSAPP_BRIDGE="true"; shift ;;
         --no-browser)
             ENABLE_BROWSER="false"; shift ;;
+        --browser)
+            ENABLE_BROWSER="true"; shift ;;
         *)
             echo "Unknown option: $1"; exit 1 ;;
     esac
@@ -120,6 +122,23 @@ if [ "$ENABLE_BROWSER" = "false" ]; then
     IMAGE_SUFFIX="-slim"
 fi
 IMAGE_TAG="ascensionoid/hermes-suite:${AGENT_VER_CLEAN}-${WEBUI_VER_CLEAN}${IMAGE_SUFFIX}"
+
+# Persist the effective browser setting back to versions.env when it deviates
+# from what the file records. up.sh/down.sh derive the image tag from
+# versions.env; without this, "./build.sh --no-browser && ./up.sh" would
+# silently run the full image under the non-slim tag (flag/env asymmetry).
+# Default builds (nothing set, or file already matches) leave the file
+# untouched — in particular the commented example stays a comment. Only an
+# UNCOMMENTED line counts as the file's recorded setting.
+FILE_BROWSER="$(grep -E '^ENABLE_BROWSER=' "${BUILD_DIR}/versions.env" 2>/dev/null | tail -1 | cut -d= -f2)"
+if [ "$ENABLE_BROWSER" != "${FILE_BROWSER:-true}" ]; then
+    if grep -qE '^#?ENABLE_BROWSER=' "${BUILD_DIR}/versions.env"; then
+        sed -i -E "s|^#?ENABLE_BROWSER=.*|ENABLE_BROWSER=${ENABLE_BROWSER}|" "${BUILD_DIR}/versions.env"
+    else
+        printf '\nENABLE_BROWSER=%s\n' "$ENABLE_BROWSER" >> "${BUILD_DIR}/versions.env"
+    fi
+    echo " Browser setting persisted to versions.env: ENABLE_BROWSER=${ENABLE_BROWSER}"
+fi
 
 # --- Patch supervisord.conf for docker-nolog mode ---
 if [ "$BUILD_MODE" = "docker-nolog" ]; then
