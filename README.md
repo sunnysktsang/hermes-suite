@@ -325,6 +325,24 @@ ENABLE_BROWSER=false
 ./build.sh
 ```
 
+The effective setting is persisted: when the CLI flag deviates from what
+`versions.env` records, `build.sh` writes the effective value back so that
+`up.sh`/`down.sh` always derive the matching tag. A default build leaves the
+file untouched (`--browser` flips a recorded `false` back to `true`).
+
+What to expect from a `-slim` runtime:
+
+- The `browser_*` toolset reports "not available" instead of attempting to
+  launch Chromium — requests fail cleanly with a JSON error, no crash, and
+  the other services are unaffected.
+- The exact error hint varies by runtime. Under Docker the message points to
+  the bundled image. Under Podman the agent's lazy-install logic may attempt
+  a one-time ~170 MB Chromium download on first browser use (x86-64 only;
+  disable via `security.allow_lazy_installs`).
+- On ARM64 no official Chromium build exists, so local browser tooling is
+  unavailable in either image — `-slim` costs nothing there and saves ~1.1GB
+  of disk/pull.
+
 ### Changing the workspace path
 
 Edit the `volumes` section in `docker-compose.yaml`:
